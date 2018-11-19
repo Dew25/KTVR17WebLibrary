@@ -34,6 +34,7 @@ import util.PageReturner;
     "/newReader",
     "/addReader",
     "/showBooks",
+    "/getBooks",
     "/showReader",
     "/library",
     "/takeBook",
@@ -102,6 +103,12 @@ public class Library extends HttpServlet {
             List<Book> listBooks = bookFacade.findActived(true);
             request.setAttribute("listBooks", listBooks);
             request.getRequestDispatcher(PageReturner.getPage("listBook")).forward(request, response);
+                break;
+            }
+        case "/getBooks":{
+            List<Book> listBooks = bookFacade.findActived(true);
+            request.setAttribute("listBooks", listBooks);
+            request.getRequestDispatcher(PageReturner.getPage("getBooks")).forward(request, response);
                 break;
             }
         case "/showReader":
