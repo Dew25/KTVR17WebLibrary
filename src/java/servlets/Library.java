@@ -60,6 +60,7 @@ public class Library extends HttpServlet {
             throws ServletException, IOException {
         response.setContentType("text/html;charset=UTF-8");
         request.setCharacterEncoding("UTF8");
+        Calendar c = new GregorianCalendar();
         HttpSession session = request.getSession(false);
         Member member = null;
         if(session != null){
@@ -171,7 +172,7 @@ public class Library extends HttpServlet {
             request.setAttribute("listReader", userFacade.findAll());
             request.getRequestDispatcher(PageReturner.getPage("takeBook")).forward(request, response);
             break;
-        case "/showTakeBook":{
+        case "/showTakeBook":
             if(!sl.isRole(member, "ADMIN")){
                 request.setAttribute("info", "У вас нет прав доступа к ресурсу");
                 request.getRequestDispatcher(PageReturner.getPage("showLogin"))
@@ -182,8 +183,7 @@ public class Library extends HttpServlet {
             request.setAttribute("takeBooks", takeBooks);
             request.getRequestDispatcher(PageReturner.getPage("listTakeBook")).forward(request, response);
                 break;
-            }
-        case "/takeBook":{
+        case "/takeBook":
             if(!sl.isRole(member, "ADMIN")){
                 request.setAttribute("info", "У вас нет прав доступа к ресурсу");
                 request.getRequestDispatcher(PageReturner.getPage("showLogin"))
@@ -195,7 +195,7 @@ public class Library extends HttpServlet {
             Book book = bookFacade.find(new Long(selectedBook));
             
             User reader = userFacade.find(new Long(selectedReader));
-            Calendar c = new GregorianCalendar();
+            
             if(book.getCount()>0){
                 book.setCount(book.getCount()-1);
                 bookFacade.edit(book);
@@ -204,11 +204,10 @@ public class Library extends HttpServlet {
             }else{
                 request.setAttribute("info", "Все книги выданы");
             }
-            List<History> takeBooks = historyFacade.findTakeBooks();
+            takeBooks = historyFacade.findTakeBooks();
             request.setAttribute("takeBooks", takeBooks);
             request.getRequestDispatcher(PageReturner.getPage("listTakeBook")).forward(request, response);
                 break;
-            }
         case "/returnBook":{
             if(!sl.isRole(member, "ADMIN")){
                 request.setAttribute("info", "У вас нет прав доступа к ресурсу");
@@ -218,11 +217,11 @@ public class Library extends HttpServlet {
             } 
             String historyId = request.getParameter("historyId");
             History history = historyFacade.find(new Long(historyId));
-            Calendar c = new GregorianCalendar();
+            
             history.setDateReturn(c.getTime());
             history.getBook().setCount(history.getBook().getCount()+1);
             historyFacade.edit(history);
-            List<History> takeBooks = historyFacade.findTakeBooks();
+            takeBooks = historyFacade.findTakeBooks();
             request.setAttribute("takeBooks", takeBooks);
             request.getRequestDispatcher(PageReturner.getPage("listTakeBook")).forward(request, response);
                 break;
@@ -235,7 +234,7 @@ public class Library extends HttpServlet {
                 break;
             } 
             String deleteBookId = request.getParameter("deleteBookId");
-            Book book = bookFacade.find(new Long(deleteBookId));
+            book = bookFacade.find(new Long(deleteBookId));
             book.setActive(Boolean.FALSE);
             bookFacade.edit(book);
             //historyFacade.remove(deleteBookId);
