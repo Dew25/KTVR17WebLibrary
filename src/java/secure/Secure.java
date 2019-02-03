@@ -5,8 +5,11 @@
  */
 package secure;
 
+import com.google.gson.Gson;
+import entity.Member;
 import entity.User;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -17,8 +20,11 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import session.UserFacade;
+import secure.entity.Role;
+import secure.entity.UserRoles;
+import session.MemberFacade;
 import session.RoleFacade;
+import session.UserFacade;
 import session.UserRolesFacade;
 import util.EncriptPass;
 import util.PageReturner;
@@ -28,6 +34,7 @@ import util.PageReturner;
  * @author Melnikov
  */
 @WebServlet(loadOnStartup = 1,name = "Secure", urlPatterns = {
+    "/restlogin",
     "/login",
     "/logout",
     "/showLogin",
@@ -38,28 +45,30 @@ public class Secure extends HttpServlet {
    
     @EJB RoleFacade roleFacade;
     @EJB UserFacade userFacade;
+    @EJB MemberFacade memberFacade;
     @EJB UserRolesFacade userRolesFacade;
 
     @Override
     public void init() throws ServletException {
-        List<User> listReader = userFacade.findAll();
-        if(listReader.isEmpty()){
+        List<Member> listMembers = memberFacade.findAll();
+        if(listMembers.isEmpty()){
             EncriptPass ep = new EncriptPass();
             String salts = ep.createSalts();
             String encriptPass = ep.setEncriptPass("admin", salts);
-            User user = new User("Сидор", "Сидоров", 
-                 "454545454", "К-Ярве", "admin", encriptPass, salts);
+            User user = new User("Сидор", "Сидоров", "454545454", "К-Ярве");
             userFacade.create(user);
+            Member member = new Member(user, "admin", encriptPass, salts);
+            memberFacade.create(member);
             Role role = new Role();
             role.setName("ADMIN");
             roleFacade.create(role);
             UserRoles ur = new UserRoles();
-            ur.setUser(user);
+            ur.setMember(member);
             ur.setRole(role);
             userRolesFacade.create(ur);
             role.setName("USER");
             roleFacade.create(role);
-            ur.setUser(user);
+            ur.setMember(member);
             ur.setRole(role);
             userRolesFacade.create(ur);
         }
@@ -81,12 +90,12 @@ public class Secure extends HttpServlet {
         response.setContentType("text/html;charset=UTF-8");
         request.setCharacterEncoding("UTF8");
         HttpSession session = request.getSession(false);
-        User regUser = null;
+        Member member = null;
         if(session != null){
             try {
-                regUser = (User) session.getAttribute("regUser");
+                member = (Member) session.getAttribute("regUser");
             } catch (Exception e) {
-                regUser = null;
+                member = null;
             }
         }
             
@@ -94,23 +103,51 @@ public class Secure extends HttpServlet {
         String path = request.getServletPath();
         if(null != path)
             switch (path) {
-        case "/login":
+        case "/restlogin":
             String login = request.getParameter("login");
             String password = request.getParameter("password");
+            if(login == null || login.isEmpty()){
+                try(PrintWriter pw = new PrintWriter(response.getWriter())){
+                    pw.write(new Gson().toJson("false"));
+                }
+                break;
+            }
+            member = memberFacade.memberByLogin(login);
+            if(member != null){
+                EncriptPass ep = new EncriptPass();
+                String salts = member.getSalts();
+                String encriptPass = ep.setEncriptPass(password, salts);
+                if(encriptPass.equals(member.getPassword())){
+                    session = request.getSession(true);
+                    session.setAttribute("regUser", member);
+                    try(PrintWriter pw = new PrintWriter(response.getWriter())){
+                        pw.write(new Gson().toJson(member.getUser()));
+                    }
+                }
+                break;
+            }else{
+                try(PrintWriter pw = new PrintWriter(response.getWriter())){
+                    pw.write(new Gson().toJson("false"));
+                }
+                break;
+            }
+        case "/login":
+            login = request.getParameter("login");
+            password = request.getParameter("password");
             request.setAttribute("info", "Нет такого пользователя!");
-            regUser = userFacade.findByLogin(login);
-            if(regUser == null){
+            member = memberFacade.memberByLogin(login);
+            if(member == null){
                 request.getRequestDispatcher(PageReturner.getPage("showLogin"))
                     .forward(request, response);
                 break;
             }
             EncriptPass ep = new EncriptPass();
-            String salts = regUser.getSalts();
+            String salts = member.getSalts();
             String encriptPass = ep.setEncriptPass(password, salts);
-            if(encriptPass.equals(regUser.getPassword())){
+            if(encriptPass.equals(member.getPassword())){
                 session = request.getSession(true);
-                session.setAttribute("regUser", regUser);
-                request.setAttribute("info", "Привет "+regUser.getName()
+                session.setAttribute("regUser", member);
+                request.setAttribute("info", "Привет "+member.getUser().getName()
                         +"! Вы вошли в систему.");
                 request.getRequestDispatcher(PageReturner.getPage("welcome"))
                         .forward(request, response);
@@ -132,27 +169,27 @@ public class Secure extends HttpServlet {
                     .forward(request, response);
             break;
         case "/showUserRoles":
-            if(!sl.isRole(regUser, "ADMIN")){
+            if(!sl.isRole(member, "ADMIN")){
                 request.setAttribute("info", "У вас нет прав доступа к ресурсу");
                 request.getRequestDispatcher(PageReturner.getPage("showLogin"))
                         .forward(request, response);
                 break;
             } 
             
-            Map<User,String> mapUsers = new HashMap<>();
-            List<User> listUsers = userFacade.findAll();
-            int n = listUsers.size();
+            Map<Member,String> mapMembers = new HashMap<>();
+            List<Member> listMembers = memberFacade.findAll();
+            int n = listMembers.size();
             for(int i=0;i<n;i++){
-                mapUsers.put(listUsers.get(i), sl.getRole(listUsers.get(i)));
+                mapMembers.put(listMembers.get(i), sl.getRole(listMembers.get(i)));
             }
             List<Role> listRoles = roleFacade.findAll();
-            request.setAttribute("mapUsers", mapUsers);
+            request.setAttribute("mapMembers", mapMembers);
             request.setAttribute("listRoles", listRoles);
             request.getRequestDispatcher(PageReturner.getPage("showUserRoles"))
                     .forward(request, response);
             break;
         case "/changeUserRole":
-            if(!sl.isRole(regUser, "ADMIN")){
+            if(!sl.isRole(member, "ADMIN")){
                 request.setAttribute("info", "У вас нет прав доступа к ресурсу");
                 request.getRequestDispatcher(PageReturner.getPage("showLogin"))
                     .forward(request, response);
@@ -162,22 +199,42 @@ public class Secure extends HttpServlet {
             String deleteButton = request.getParameter("deleteButton");
             String userId = request.getParameter("user");
             String roleId = request.getParameter("role");
-            User reader = userFacade.find(new Long(userId));
-            Role roleToUser = roleFacade.find(new Long(roleId));
-            UserRoles ur = new UserRoles(reader, roleToUser);
-            if(setButton != null){
+            UserRoles ur=null;
+            
+            if(setButton != null && roleId != null){
+                Role roleToUser = roleFacade.find(new Long(roleId));
+                ur = new UserRoles(member, roleToUser);
                 sl.addRoleToUser(ur);
             }
-            if(deleteButton != null){
-                sl.deleteRoleToUser(ur.getUser());
+            if(deleteButton != null && roleId != null && userId != null){
+                Role roleToUser = roleFacade.find(new Long(roleId));
+                member = memberFacade.memberByUserId(new Long(userId));
+                ur = new UserRoles(member, roleToUser);
+                sl.deleteRoleToUser(ur.getMember());
             }
-            mapUsers = new HashMap<>();
-            listUsers = userFacade.findAll();   
-            n = listUsers.size();
+            if(userId == null && roleId == null && deleteButton != null){
+                if((member = memberFacade.memberByLogin("login")) != null){
+                    User user = member.getUser();
+                    
+                    List<UserRoles> listUserRoles = userRolesFacade.findByMember(member);
+                    for(int i=0;i<listUserRoles.size();i++){
+                        userRolesFacade.remove(listUserRoles.get(i));
+                    }
+                    memberFacade.remove(member);
+                    userFacade.remove(user);
+                    request.setAttribute("info", "тестовый пользователь удален");
+                    request.getRequestDispatcher(PageReturner.getPage("welcome"))
+                        .forward(request, response);
+                    break;
+                }
+            }
+            mapMembers = new HashMap<>();
+            listMembers = memberFacade.findAll();   
+            n = listMembers.size();
             for(int i=0;i<n;i++){
-                mapUsers.put(listUsers.get(i), sl.getRole(listUsers.get(i)));
+                mapMembers.put(listMembers.get(i), sl.getRole(listMembers.get(i)));
             }
-            request.setAttribute("mapUsers", mapUsers);
+            request.setAttribute("mapMembers", mapMembers);
             List<Role> newListRoles = roleFacade.findAll();
             request.setAttribute("listRoles", newListRoles);
             request.getRequestDispatcher(PageReturner.getPage("showUserRoles"))

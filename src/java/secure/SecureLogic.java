@@ -5,7 +5,9 @@
  */
 package secure;
 
-import entity.User;
+import secure.entity.UserRoles;
+import secure.entity.Role;
+import entity.Member;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -37,25 +39,25 @@ public class SecureLogic {
     public void addRoleToUser(UserRoles ur){
         if(ur.getRole().getName().equals("ADMIN")){
             userRolesFacade.create(ur);
-            Role addNewRole = roleFacade.findRoleByName("USER");
-            UserRoles addedNewRoles = new UserRoles(ur.getUser(),addNewRole);
+            Role userRole = roleFacade.findRoleByName("USER");
+            UserRoles addedNewRoles = new UserRoles(ur.getMember(),userRole);
             userRolesFacade.create(addedNewRoles);
         }else if(ur.getRole().getName().equals("USER")){
             userRolesFacade.create(ur);
         }
         
     }
-    public void deleteRoleToUser(User user){
-        List<UserRoles> listUserRoles = userRolesFacade.findByUser(user);
+    public void deleteRoleToUser(Member member){
+        List<UserRoles> listUserRoles = userRolesFacade.findByMember(member);
         int n = listUserRoles.size();
         for(int i=0; i<n; i++){
             userRolesFacade.remove(listUserRoles.get(i));
         }
     }
 
-    public boolean isRole(User user, String roleName){
-        if(user == null) return false;
-        List<UserRoles> listUserRoles = userRolesFacade.findByUser(user);
+    public boolean isRole(Member member, String roleName){
+        if(member == null) return false;
+        List<UserRoles> listUserRoles = userRolesFacade.findByMember(member);
         Role role = roleFacade.findRoleByName(roleName);
         int n = listUserRoles.size();
         for(int i = 0; i < n; i++){
@@ -66,8 +68,8 @@ public class SecureLogic {
         return false;
     }
     
-    public String getRole(User regUser) {
-        List<UserRoles> listUserRoles = userRolesFacade.findByUser(regUser);
+    public String getRole(Member member) {
+        List<UserRoles> listUserRoles = userRolesFacade.findByMember(member);
         int n = listUserRoles.size();
         for(int i = 0; i<n; i++){
             if("ADMIN".equals(listUserRoles.get(i).getRole().getName())){

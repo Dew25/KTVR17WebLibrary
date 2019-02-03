@@ -15,24 +15,24 @@
         <h1>Добавляем в библиотеку нового читателя</h1>
         <form action="addReader" method="POST" name="form1" id="_form1">
              Имя:<br>
-            <input type="text" name="name"><br>
+            <input type="text" name="name" id="name"><br>
              Фамилия:<br>
-            <input type="text" name="surname"><br>
+            <input type="text" name="surname" id="surname"><br>
              Телефон:<br>
-            <input type="text" name="phone"><br>
+            <input type="text" name="phone" id="phone"><br>
              Город<br>
-            <input type="text" name="city"><br>
+            <input type="text" name="city" id="city"><br>
             <br>
              Логин<br>
-            <input type="text" name="login"><br>
+            <input type="text" name="login" id="login"><br>
             <br>
              Пароль<br>
-            <input type="password" name="password1"><br>
+            <input type="password" name="password1" id="password1"><br>
             <br>
              Повторите пароль<br>
-            <input type="password" name="password2"><br>
+            <input type="password" name="password2" id="password2"><br>
             <br>
-            <input type="submit" value="Добавить">
+            <input type="submit" value="Добавить" id="btnAdd">
         </form><br>
     </body>
 </html>

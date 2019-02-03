@@ -15,7 +15,7 @@
     </head>
     <body>
         <h1>Добавляем в библиотеку новую книгу</h1>
-        <form action="addBook" method="POST" name="form1" onsubmit="return validate();" id="form1">
+        <form action="rest/book" method="POST" name="form1" onsubmit="return validate();" id="form1">
              Название:<br>
             <input type="text" id="nameBook" name="nameBook"><br>
              Автор:<br>

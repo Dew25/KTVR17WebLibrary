@@ -14,6 +14,7 @@
     </head>
     <body>
         <h1>Назначение ролей!</h1>
+        <p id="info">${info}</p>
         <form action="changeUserRole" method="POST">
             <table>
                 <tr>
@@ -26,8 +27,8 @@
                     <td>
                         <select name="user">
                             <option value="" disabled selected hidden></option>
-                            <c:forEach var="entry" items="${mapUsers}">
-                                <option value="${entry.key.id}">${entry.key.login}, роль: ${entry.value} </option>
+                            <c:forEach var="entry" items="${mapMembers}">
+                                <option value="${entry.key.user.id}">${entry.key.login}, роль: ${entry.value}</option>
                             </c:forEach>
                         </select>
                     </td>
@@ -40,7 +41,7 @@
                         </select>
                     </td>
                     <td><input type="submit" name="setButton" value="Назначить"></td>
-                    <td><input type="submit" name="deleteButton" value="Удалить"></td>
+                    <td><input type="submit" name="deleteButton" value="Удалить" id="deleteButton"></td>
                 </tr>
             </table>
         </form>

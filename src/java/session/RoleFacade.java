@@ -8,7 +8,7 @@ package session;
 import javax.ejb.Stateless;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
-import secure.Role;
+import secure.entity.Role;
 
 /**
  *

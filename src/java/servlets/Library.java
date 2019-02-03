@@ -7,6 +7,7 @@ package servlets;
 
 import entity.Book;
 import entity.History;
+import entity.Member;
 import entity.User;
 import java.io.IOException;
 import java.util.Calendar;
@@ -22,6 +23,7 @@ import javax.servlet.http.HttpSession;
 import secure.SecureLogic;
 import session.BookFacade;
 import session.HistoryFacade;
+import session.MemberFacade;
 import session.UserFacade;
 import util.EncriptPass;
 import util.PageReturner;
@@ -31,6 +33,7 @@ import util.PageReturner;
  * @author Melnikov
  */
 @WebServlet(name = "Library", urlPatterns = {
+    "/adminhash",
     "/newBook",
     "/addBook",
     "/newReader",
@@ -42,6 +45,8 @@ import util.PageReturner;
     "/showTakeBook",
     "/returnBook",
     "/deleteBook",
+    "/deleteReader",
+    
     
 })
 public class Library extends HttpServlet {
@@ -49,18 +54,19 @@ public class Library extends HttpServlet {
 @EJB BookFacade bookFacade;
 @EJB UserFacade userFacade;
 @EJB HistoryFacade historyFacade;
+@EJB MemberFacade memberFacade;
     
     protected void processRequest(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         response.setContentType("text/html;charset=UTF-8");
         request.setCharacterEncoding("UTF8");
         HttpSession session = request.getSession(false);
-        User regUser = null;
+        Member member = null;
         if(session != null){
             try {
-                regUser = (User) session.getAttribute("regUser");
+                member = (Member) session.getAttribute("regUser");
             } catch (Exception e) {
-                regUser = null;
+                member = null;
             }
         }
             
@@ -69,7 +75,7 @@ public class Library extends HttpServlet {
         if(null != path)
             switch (path) {
         case "/newBook":
-            if(!sl.isRole(regUser, "ADMIN")){
+            if(!sl.isRole(member, "ADMIN")){
                 request.setAttribute("info", "У вас нет прав доступа к ресурсу");
                 request.getRequestDispatcher(PageReturner.getPage("showLogin"))
                         .forward(request, response);
@@ -78,7 +84,7 @@ public class Library extends HttpServlet {
             request.getRequestDispatcher(PageReturner.getPage("newBook")).forward(request, response);
             break;
         case "/addBook":{
-            if(!sl.isRole(regUser, "ADMIN")){
+            if(!sl.isRole(member, "ADMIN")){
                 request.setAttribute("info", "У вас нет прав доступа к ресурсу");
                 request.getRequestDispatcher(PageReturner.getPage("showLogin"))
                         .forward(request, response);
@@ -115,23 +121,35 @@ public class Library extends HttpServlet {
             EncriptPass ep = new EncriptPass();
             String salts = ep.createSalts();
             String encriptPass = ep.setEncriptPass(password1, salts);
-            User user = new User(name, surname, phone, city, login, 
-                    encriptPass,salts);
+            User user = new User(name, surname, phone, city);
             userFacade.create(user);
+            member = new Member(user, login, encriptPass, salts);
+            memberFacade.create(member);
             request.setAttribute("reader", user);
+            request.setAttribute("info", "Новый пользователь создан!");
             request.getRequestDispatcher(PageReturner.getPage("welcome"))
                     .forward(request, response);
                 break;
             }
+        case "/deleteReader":
+            String login = request.getParameter("login");
+            member = memberFacade.memberByLogin(login);
+            User user = member.getUser();
+            memberFacade.remove(member);
+            userFacade.remove(user);
+            request.setAttribute("info", "Пользователь удвлен!");
+            request.getRequestDispatcher(PageReturner.getPage("welcome"))
+                    .forward(request, response);
+            break;
         case "/showBooks":{
             List<Book> listBooks = bookFacade.findActived(true);
-            request.setAttribute("role", sl.getRole(regUser));
+            request.setAttribute("role", sl.getRole(member));
             request.setAttribute("listBooks", listBooks);
             request.getRequestDispatcher(PageReturner.getPage("listBook")).forward(request, response);
                 break;
             }
         case "/showReader":
-            if(!sl.isRole(regUser, "ADMIN")){
+            if(!sl.isRole(member, "ADMIN")){
                 request.setAttribute("info", "У вас нет прав доступа к ресурсу");
                 request.getRequestDispatcher(PageReturner.getPage("showLogin"))
                         .forward(request, response);
@@ -142,7 +160,7 @@ public class Library extends HttpServlet {
             request.getRequestDispatcher(PageReturner.getPage("listReader")).forward(request, response);
             break;
         case "/library":
-            if(!sl.isRole(regUser, "ADMIN")){
+            if(!sl.isRole(member, "ADMIN")){
                 request.setAttribute("info", "У вас нет прав доступа к ресурсу");
                 request.getRequestDispatcher(PageReturner.getPage("showLogin"))
                         .forward(request, response);
@@ -154,7 +172,7 @@ public class Library extends HttpServlet {
             request.getRequestDispatcher(PageReturner.getPage("takeBook")).forward(request, response);
             break;
         case "/showTakeBook":{
-            if(!sl.isRole(regUser, "ADMIN")){
+            if(!sl.isRole(member, "ADMIN")){
                 request.setAttribute("info", "У вас нет прав доступа к ресурсу");
                 request.getRequestDispatcher(PageReturner.getPage("showLogin"))
                         .forward(request, response);
@@ -166,7 +184,7 @@ public class Library extends HttpServlet {
                 break;
             }
         case "/takeBook":{
-            if(!sl.isRole(regUser, "ADMIN")){
+            if(!sl.isRole(member, "ADMIN")){
                 request.setAttribute("info", "У вас нет прав доступа к ресурсу");
                 request.getRequestDispatcher(PageReturner.getPage("showLogin"))
                         .forward(request, response);
@@ -192,7 +210,7 @@ public class Library extends HttpServlet {
                 break;
             }
         case "/returnBook":{
-            if(!sl.isRole(regUser, "ADMIN")){
+            if(!sl.isRole(member, "ADMIN")){
                 request.setAttribute("info", "У вас нет прав доступа к ресурсу");
                 request.getRequestDispatcher(PageReturner.getPage("showLogin"))
                         .forward(request, response);
@@ -210,7 +228,7 @@ public class Library extends HttpServlet {
                 break;
             }
         case "/deleteBook":{
-            if(!sl.isRole(regUser, "ADMIN")){
+            if(!sl.isRole(member, "ADMIN")){
                 request.setAttribute("info", "У вас нет прав доступа к ресурсу");
                 request.getRequestDispatcher(PageReturner.getPage("showLogin"))
                         .forward(request, response);
@@ -226,7 +244,11 @@ public class Library extends HttpServlet {
             request.getRequestDispatcher(PageReturner.getPage("listBook")).forward(request, response);
                 break;
             }
-        default:
+        case "/adminhash":
+            EncriptPass ep = new EncriptPass();
+            
+            String encriptPass = ep.setEncriptPass("admin","");
+            request.setAttribute("adminhash", encriptPass);
             request.getRequestDispatcher(PageReturner.getPage("welcome")).forward(request, response);
             break;
     }
