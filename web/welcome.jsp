@@ -13,20 +13,21 @@
     </head>
     <body>
         <h1>Навигация по сайту</h1>
-        ${info}<br>
+        <p id="info">${info}</p>
+        <br>${adminhash}
         <br>
-        <a href="showLogin">Войти в систему</a><br>
-        <a href="logout">Выйти из системы</a><br>
-        <a href="newReader">добавить читателя</a><br>
-        <a href="showBooks">Список книг</a><br>
+        <a id="login" href="showLogin">Войти в систему</a><br>
+        <a id="logout" href="logout">Выйти из системы</a><br>
+        <a id="addReader" href="newReader">добавить читателя</a><br>
+        <a id="listBooks" href="showBooks">Список книг</a><br>
         
         <br>
         <p>Для администратора:</p>
-        <a href="newBook">добавить книгу</a><br>
-        <a href="showReader">Список читателей</a><br>
-        <a href="showTakeBook">Список выданных книг</a>
-        <a href="library">Выдать книгу</a><br>
-        <a href="showUserRoles">Назначение ролей пользователям</a>
+        <a id="addBook" href="newBook">добавить книгу</a><br>
+        <a id="listReaders" href="showReader">Список читателей</a><br>
+        <a id="showTakeBook" href="showTakeBook">Список выданных книг</a>
+        <a id="library" href="library">Выдать книгу</a><br>
+        <a id="showUserRoles" href="showUserRoles">Назначение ролей пользователям</a>
         <br><br>
         Добавлена книга:<br>
         Название: ${book.nameBook}<br>

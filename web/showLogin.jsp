@@ -14,7 +14,7 @@
     </head>
     <body>
         <h1>Введите логин и пароль</h1>
-        ${info}<br>
+        <p id="info">${info}</p>
         <form action="login" method="POST" onsubmit="return validate()" name="form1" id="_form1">
              Логин:<br>
             <input type="text" name="login" id="login"><br>
@@ -22,9 +22,9 @@
              Пароль:<br>
             <input type="password" name="password" id="password"><br>
             <br>
-            <input type="submit" value="Войти" id="button">
+            <input type="submit" value="Войти" id="butSubmit">
         </form><br><br>
-        <a href="newReader">Зарегистрироваться</a>
+        <a id="showregistry" href="newReader">Зарегистрироваться</a>
         <script src="${pageContext.request.contextPath}/js/showLogin.js"></script>
     </body>
 </html>
